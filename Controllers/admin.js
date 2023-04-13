@@ -75,9 +75,9 @@ const deleteProductById = async (req, res) => {
 
 
 const createUser = async (req, res) => {
-    const { name, email, mobile, sex, address, image } = req.body;
+    const { name, email, mobile, address, password, age, sex, image } = req.body;
     try {
-        const user = new User({ name, email, mobile, sex, address, image });
+        const user = new User({ name, email, mobile, address, password, age, sex, image });
         await user.save();
         res.send('user created successfully!');
     } catch (err) {
