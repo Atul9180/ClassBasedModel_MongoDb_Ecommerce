@@ -1,105 +1,86 @@
-const Product = require('../Model/products');
-const User = require('../Model/users');
+const Product = require('../models/product');
 
-const createProduct = async (req, res) => {
-    const { name, price, description, image } = req.body;
-    try {
-        const product = new Product({ name, price, description, image });
-        await product.save();
-
-        res.send('Product created successfully!');
-    } catch (err) {
-        res.status(500).send(`Server error: ${err}`);
-    }
+exports.getAddProduct = (req, res, next) => {
+  res.render('admin/edit-product', {
+    pageTitle: 'Add Product',
+    path: '/admin/add-product',
+    editing: false
+  });
 };
 
-const getProductById = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-        res.status(200).send({ product });
-    } catch (err) {
-        res.status(500).send('Product not found');
-    }
-}
-
-const getAllProducts = async (req, res) => {
-    try {
-        const products = await Product.find();
-        if (!products) {
-            return res.status(404).send('no Product found');
-        }
-        res.status(200).send({ products })
-    }
-    catch (err) {
-        res.status(500).send('no Product found');
-    }
-}
+exports.postAddProduct = (req, res, next) => {
+  const title = req.body.title;
+  const imageUrl = req.body.imageUrl;
+  const price = req.body.price;
+  const description = req.body.description;
+  const product = new Product(title, price, description, imageUrl, null, req.user._id);
+  product
+    .save()
+    .then(result => {
+      console.log('Created Product');
+      res.redirect('/admin/products');
+    })
+    .catch(err => {
+      console.log(err);
+    });
+};
 
 
-const updateProductById = async (req, res) => {
-    const { id } = req.params;
-    const { name, price, description, image } = req.body;
-    try {
-        let product = await Product.findById(id);
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-        product.name = name;
-        product.price = price;
-        product.description = description;
-        product.image = image;
-        await product.save();
-        res.status(200).send("Product updated Successfully");
-    }
-    catch (err) {
-        res.status(500).send('Error in Product updation');
-    }
-}
+exports.editProduct = (req, res, next) => {
+  const editMode = req.query.edit;
+  if (!editMode) {
+    return res.redirect('/');
+  }
+  const prodId = req.params.productId;
+  Product.findById(prodId)
+    .then(product => {
+      if (!product) {
+        return res.redirect('/');
+      }
+      res.render('admin/edit-product', {
+        pageTitle: 'Edit Product',
+        path: '/admin/edit-product',
+        editing: editMode,
+        product: product
+      });
+    })
+    .catch(err => console.log(err));
+};
 
 
-const deleteProductById = async (req, res) => {
-    try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-        res.status(200).send("Product deleted Successfully!");
-    }
-    catch (err) {
-        res.status(500).send('Error in Product deletion');
-    }
-}
+exports.saveEditedProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  const updatedTitle = req.body.title;
+  const updatedPrice = req.body.price;
+  const updatedImageUrl = req.body.imageUrl;
+  const updatedDesc = req.body.description;
+  const product = new Product(updatedTitle, updatedPrice, updatedDesc, updatedImageUrl, prodId);
+  product.save()
+    .then(result => {
+      console.log('UPDATED PRODUCT!');
+      res.redirect('/admin/products');
+    })
+    .catch(err => console.log(err));
+};
 
+exports.getProducts = (req, res, next) => {
+  Product.findAll()
+    .then(products => {
+      res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products'
+      });
+    })
+    .catch(err => console.log(err));
+};
 
-const createUser = async (req, res) => {
-    const { name, email, mobile, address, password, age, sex, image } = req.body;
-    try {
-        const user = new User({ name, email, mobile, address, password, age, sex, image });
-        await user.save();
-        res.send('user created successfully!');
-    } catch (err) {
-        res.status(500).send(`Server error: ${err}`);
-    }
-}
-
-
-const findUserById = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).send('user not found');
-        }
-        res.status(200).send({ user });
-    } catch (err) {
-        res.status(500).send(`User Not found: ${err}`);
-    }
-}
-
-module.exports = {
-    createProduct, getProductById, getAllProducts, updateProductById, deleteProductById,
-    createUser, findUserById
-}
+exports.deleteProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  Product.delete(prodId)
+    .then(result => {
+      console.log('DESTROYED PRODUCT');
+      res.redirect('/admin/products');
+    })
+    .catch(err => console.log(err));
+};

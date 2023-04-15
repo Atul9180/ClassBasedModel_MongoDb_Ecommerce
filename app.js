@@ -1,22 +1,41 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
-const port = 3000;
-const connectDB = require('./connection/conn');
-const adminRouter = require('./routes/admin');
+
+const errorController = require('./controllers/error');
+const mongoConnect = require('./util/database').mongoConnect;
+
+const User = require('./models/user')
+
+
+app.set('view engine', 'ejs');
+app.set('views', 'views');
+
+const adminRoutes = require('./routes/admin');
+const shopRoutes = require('./routes/shop');
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 
-connectDB();
+app.use((req, res, next) => {
+    User.findUserById("643b136b1da57bb107de039e")
+        .then(user => {
+            req.user = user;
+            next();
+        })
+        .catch(err => console.log(err));
+})
+app.use('/admin', adminRoutes);
+app.use(shopRoutes);
 
+app.use(errorController.get404);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use('/admin', adminRouter);
+let port = process.env.PORT;
+mongoConnect(() => {
+    app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+});
 
-
-app.get('/', (req, res) => res.send('Hello World!'))
-
-
-
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
