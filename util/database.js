@@ -6,7 +6,8 @@ let _db;
 
 const mongoConnect = callback => {
   MongoClient.connect(
-    process.env.MONGO_URI
+    process.env.MONGO_URI,
+    { useUnifiedTopology: true }
   )
     .then(client => {
       console.log('Connected!');
