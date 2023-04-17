@@ -10,25 +10,61 @@ class User {
     this._id = id;
   }
 
+  //@desc: save users to db
   save() {
     const db = getDb();
     return db.collection('users').insertOne(this);
   }
 
+
+  //@desc: create 'orders' collection and add cart products to it 
+  addOrder() {
+    const db = getDb();
+    return this.getCart().then(products => {
+      const order = {
+        items: products,
+        user: {
+          _id: new ObjectId(this._id),
+          name: this.name
+        }
+      };
+      return db.collection('orders').insertOne(order);
+    })
+      .then(result => {
+        this.cart = { items: [] };
+        return db
+          .collection('users')
+          .updateOne(
+            { _id: new ObjectId(this._id) },
+            { $set: { cart: { items: [] } } }
+          );
+      })
+  }
+
+
+  //@desc: find all orders placed
+  getOrders() {
+    const db = getDb();
+    return db
+      .collection('orders')
+      .find({ 'user._id': new ObjectId(this._id) })
+      .toArray();
+  }
+
+
+  //@desc: add product to cart-> embedding productId,quantity to 'users' collection.
   addToCart(product) {
     const cartProductIndex = this.cart.items.findIndex(cp => {
       return cp.productId.toString() === product._id.toString();
     });
     let newQuantity = 1;
     const updatedCartItems = [...this.cart.items]
-
     if (cartProductIndex >= 0) {
       newQuantity = this.cart.items[cartProductIndex].quantity + 1;
       updatedCartItems[cartProductIndex].quantity = newQuantity;
     } else {
       updatedCartItems.push({ productId: new ObjectId(product._id), quantity: newQuantity });
     }
-
     const updatedCart = { items: updatedCartItems }
     const db = getDb();
     return db
@@ -39,6 +75,8 @@ class User {
       );
   }
 
+
+  //@desc: find userById
   static findById(userId) {
     const db = getDb();
     return db
@@ -54,7 +92,7 @@ class User {
   }
 
 
-  //populate products in cart
+  //@desc: populate products in cartPage
   getCart() {
     const db = getDb();
     const productIds = this.cart.items.map(i => {
@@ -76,6 +114,8 @@ class User {
       });
   }
 
+
+  //@desc: delete items from cart
   deleteItemFromCart(productId) {
     const updatedCartItems = this.cart.items.map(item => {
       if (item.productId.toString() === productId.toString()) {

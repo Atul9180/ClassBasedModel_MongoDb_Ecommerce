@@ -61,7 +61,6 @@ exports.postCart = (req, res, next) => {
   Product.findById(prodId).then(product => {
     return req.user.addToCart(product);
   }).then(result => {
-    console.log(result);
     res.redirect('/cart');
   });
 };
@@ -79,15 +78,28 @@ exports.CartDeleteProduct = (req, res, next) => {
 };
 
 
-// exports.getOrders = (req, res, next) => {
-//   req.user
-//     .getOrders({ include: ['products'] })
-//     .then(orders => {
-//       res.render('shop/orders', {
-//         path: '/orders',
-//         pageTitle: 'Your Orders',
-//         orders: orders
-//       });
-//     })
-//     .catch(err => console.log(err));
-// };
+// to place order adjusting order page and collection
+exports.postOrder = (req, res, next) => {
+  let fetchedCart;
+  req.user
+    .addOrder()
+    .then(result => {
+      res.redirect('/orders')
+    })
+    .catch(err => console.log(err));
+};
+
+
+//@desc: populating orders page with placed orders 
+exports.getOrders = (req, res, next) => {
+  req.user
+    .getOrders()
+    .then(orders => {
+      res.render('shop/orders', {
+        path: '/orders',
+        pageTitle: 'Your Orders',
+        orders: orders
+      });
+    })
+    .catch(err => console.log(err));
+};
