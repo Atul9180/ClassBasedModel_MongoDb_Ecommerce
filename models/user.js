@@ -54,8 +54,8 @@ class User {
       });
   }
 
-  //========================below fix require
 
+  //populate products in cart
   getCart() {
     const db = getDb();
     const productIds = this.cart.items.map(i => {
@@ -64,7 +64,7 @@ class User {
     return db
       .collection('products')
       .find({ _id: { $in: productIds } })
-      .toArray()
+      .toArray()                      //convert into js arrays
       .then(products => {
         return products.map(p => {
           return {
