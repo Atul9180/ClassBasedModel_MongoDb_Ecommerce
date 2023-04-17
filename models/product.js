@@ -20,7 +20,7 @@ class Product {
     }
     else {
       //save product with new id by default
-      dbOperation = db.collection('products').insertOne(this)
+      dbOperation = db.collection('products').insertOne(this);
     }
     return dbOperation
       .then(result => {
